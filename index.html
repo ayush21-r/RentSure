@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentSure - Safe rentals for students & bachelors</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #F8F9FA;
+            color: #212529;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+        /* Header */
+        .header {
+            background: #FFFFFF;
+            border-bottom: 1px solid #DEE2E6;
+            padding: 16px 0;
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #212529;
+            text-decoration: none;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            color: #6C757D;
+        }
+
+        /* Landing */
+        .landing {
+            background: #FFFFFF;
+            padding: 48px 0 56px;
+        }
+
+        .hero {
+            display: grid;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .hero-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .select {
+            padding: 10px 14px;
+            border: 1px solid #DEE2E6;
+            border-radius: 8px;
+            background: #FFFFFF;
+            font-size: 1rem;
+            color: #212529;
+        }
+
+        .btn-primary {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #0D6EFD;
+            color: #FFFFFF;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary:disabled {
+            background: #9EC5FE;
+            cursor: not-allowed;
+        }
+
+        .trust-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .trust-item {
+            border: 1px solid #E9ECEF;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 0.9rem;
+            color: #495057;
+            background: #F8F9FA;
+        }
+
+        .how-it-works {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .step {
+            border: 1px solid #E9ECEF;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 0.9rem;
+            color: #495057;
+            background: #FFFFFF;
+        }
+
+        /* App */
+        .app {
+            display: none;
+            background: #F8F9FA;
+            padding: 24px 0 48px;
+        }
+
+        .app.show { display: block; }
+
+        .app-top {
+            background: #FFFFFF;
+            border: 1px solid #DEE2E6;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .app-title { font-size: 1.1rem; font-weight: 600; }
+        .app-subtitle { color: #6C757D; font-size: 0.9rem; }
+
+        .rentals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        .rental-card {
+            background: #FFFFFF;
+            border: 1px solid #DEE2E6;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card-image {
+            height: 160px;
+            background: #E9ECEF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ADB5BD;
+            font-size: 2rem;
+        }
+
+        .card-body { padding: 14px; }
+        .price { font-size: 1.3rem; font-weight: 700; }
+        .distance { color: #6C757D; font-size: 0.9rem; margin-bottom: 8px; }
+        .desc { font-size: 0.9rem; color: #495057; margin-bottom: 10px; }
+
+        .scores { display: flex; gap: 12px; font-size: 0.85rem; color: #495057; margin-bottom: 8px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .tag { font-size: 0.75rem; background: #E7F1FF; color: #0D6EFD; padding: 4px 8px; border-radius: 6px; }
+        .tag.verified { background: #D1E7DD; color: #0F5132; }
+
+        .expand-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px 10px;
+            border: 1px solid #DEE2E6;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #0D6EFD;
+            cursor: pointer;
+        }
+
+        .details { display: none; padding: 12px 14px; border-top: 1px solid #E9ECEF; font-size: 0.85rem; color: #495057; }
+        .details.show { display: block; }
+
+        .footer {
+            background: #FFFFFF;
+            border-top: 1px solid #DEE2E6;
+            padding: 20px 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6C757D;
+        }
+
+        @media (max-width: 768px) {
+            .header-inner { flex-direction: column; align-items: flex-start; }
+            .app-top { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container header-inner">
+            <a class="brand" href="#">RentSure</a>
+            <div class="header-subtitle">Safe rentals for students & bachelors</div>
+        </div>
+    </header>
+
+    <section class="landing" id="landing">
+        <div class="container">
+            <div class="hero">
+                <div class="hero-title">Find safe and trusted rentals near colleges</div>
+                <div class="hero-actions">
+                    <label for="cityLanding" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">Select city</label>
+                    <select id="cityLanding" class="select" aria-label="Select city">
+                        <option value="">Select city</option>
+                        <option value="nagpur">Nagpur</option>
+                        <option value="pune">Pune</option>
+                        <option value="bengaluru">Bengaluru</option>
+                    </select>
+                    <button id="exploreBtn" class="btn-primary" disabled>Explore Rentals</button>
+                </div>
+
+                <div class="trust-row">
+                    <div class="trust-item">✅ Verified owners</div>
+                    <div class="trust-item">🛡️ Safety scores</div>
+                    <div class="trust-item">🎓 Student‑focused rentals</div>
+                </div>
+
+                <div class="how-it-works">
+                    <div class="step">1. Choose city</div>
+                    <div class="step">2. View trusted rentals</div>
+                    <div class="step">3. Decide with confidence</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="app" id="app">
+        <div class="container">
+            <div class="app-top">
+                <div>
+                    <div class="app-title" id="appTitle">Rentals</div>
+                    <div class="app-subtitle" id="appSubtitle">Select a city to view rentals</div>
+                </div>
+                <div>
+                    <select id="cityApp" class="select">
+                        <option value="">Select city</option>
+                        <option value="nagpur">Nagpur</option>
+                        <option value="pune">Pune</option>
+                        <option value="bengaluru">Bengaluru</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="rentalsContainer">
+                <div class="app-subtitle">Choose a city to start</div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        Built for Indian students • Cities: Nagpur | Pune | Bengaluru
+    </footer>
+
+    <!-- Removed duplicate script block to fix 'Cannot redeclare block-scoped variable' error -->
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentSure - Student Rentals</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #F8F9FA;
+            color: #212529;
+            line-height: 1.6;
+        }
+
+        /* ========== TOP NAVIGATION ========== */
+        .top-nav {
+            background: white;
+            border-bottom: 1px solid #DEE2E6;
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #212529;
+            text-decoration: none;
+        }
+
+        .city-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .city-dropdown {
+            padding: 10px 16px;
+            border: 1px solid #DEE2E6;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #212529;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .city-dropdown:hover {
+            border-color: #0D6EFD;
+        }
+
+        .city-dropdown:focus {
+            outline: none;
+            border-color: #0D6EFD;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #6C757D;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #0D6EFD;
+        }
+
+        /* ========== MAIN CONTENT ========== */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px;
+        }
+
+        .content-header {
+            margin-bottom: 24px;
+        }
+
+        .content-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .content-subtitle {
+            font-size: 0.95rem;
+            color: #6C757D;
+        }
+
+        /* ========== LOADING STATE ========== */
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+            color: #6C757D;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #E9ECEF;
+            border-top: 3px solid #0D6EFD;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ========== RENTAL CARDS GRID ========== */
+        .rentals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        /* ========== RENTAL CARD ========== */
+        .rental-card {
+            background: white;
+            border: 1px solid #DEE2E6;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .rental-card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+
+        .card-image-placeholder {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #E9ECEF 0%, #CED4DA 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #ADB5BD;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .property-id {
+            font-size: 0.75rem;
+            color: #ADB5BD;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .property-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 4px;
+        }
+
+        .property-distance {
+            font-size: 0.9rem;
+            color: #6C757D;
+            margin-bottom: 12px;
+        }
+
+        .property-description {
+            font-size: 0.9rem;
+            color: #495057;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ========== SCORES ROW ========== */
+        .scores-row {
+            display: flex;
+            gap: 16px;
+            padding: 12px 0;
+            border-top: 1px solid #E9ECEF;
+            border-bottom: 1px solid #E9ECEF;
+            margin-bottom: 12px;
+        }
+
+        .score-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #495057;
+        }
+
+        .score-number {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        /* ========== PROPERTY TAGS ========== */
+        .property-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .property-tag {
+            padding: 4px 10px;
+            background: #E7F1FF;
+            color: #0D6EFD;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .property-tag.verified {
+            background: #D1E7DD;
+            color: #0F5132;
+        }
+
+        /* ========== CARD FOOTER (Expandable) ========== */
+        .card-footer {
+            padding: 0 20px 20px;
+            display: none;
+        }
+
+        .card-footer.show {
+            display: block;
+            animation: expandDown 0.3s ease-out;
+        }
+
+        @keyframes expandDown {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .expand-btn {
+            width: 100%;
+            padding: 10px;
+            background: white;
+            border: 1px solid #DEE2E6;
+            border-radius: 8px;
+            color: #0D6EFD;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .expand-btn:hover {
+            background: #F8F9FA;
+            border-color: #0D6EFD;
+        }
+
+        .breakdown-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #E9ECEF;
+        }
+
+        .breakdown-title {
+            font-size: 0.85rem;
+            color: #6C757D;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .breakdown-item {
+            background: #F8F9FA;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .breakdown-item-label {
+            font-size: 0.75rem;
+            color: #6C757D;
+            margin-bottom: 4px;
+        }
+
+        .breakdown-item-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0D6EFD;
+        }
+
+        /* ========== FOOTER ========== */
+        .footer {
+            background: white;
+            border-top: 1px solid #DEE2E6;
+            padding: 32px 20px;
+            margin-top: 60px;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            color: #6C757D;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+            color: #0D6EFD;
+        }
+
+        .footer-text {
+            font-size: 0.85rem;
+            color: #ADB5BD;
+        }
+
+        /* ========== ERROR MESSAGE ========== */
+        .error-message {
+            background: #F8D7DA;
+            border: 1px solid #F5C2C7;
+            color: #842029;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .logo, .city-selector, .nav-links {
+                justify-content: center;
+            }
+
+            .rentals-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .breakdown-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== TOP NAVIGATION ========== -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <span>🏠</span>
+                <span>RentSure</span>
+            </a>
+            
+            <div class="city-selector">
+                <label for="citySelect" style="color: #6C757D; font-size: 0.9rem;">📍</label>
+                <select id="citySelect" class="city-dropdown">
+                    <option value="">Select city</option>
+                    <option value="nagpur">Nagpur</option>
+                    <option value="pune">Pune</option>
+                    <option value="bengaluru">Bengaluru</option>
+                </select>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#about" class="nav-link">About ratings</a>
+                <a href="#help" class="nav-link">Help</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1 class="content-title">Verified rentals near colleges</h1>
+            <p class="content-subtitle">Choose a city to see available properties</p>
+        </div>
+
+        <div id="rentalsContainer">
+            <div class="loading">
+                <p>Select a city to view rentals</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-links">
+                <a href="#" class="footer-link" id="aboutRatingsLink">About trust & safety ratings</a>
+                <a href="#" class="footer-link">Privacy</a>
+                <a href="#" class="footer-link">Contact</a>
+            </div>
+            <p class="footer-text">RentSure • Hackathon Project 2026</p>
+        </div>
+    </footer>
+
+    <!-- ========== ABOUT RATINGS MODAL (SIMPLE) ========== -->
+    <div id="aboutModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto;">
+        <div style="max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; padding: 32px;">
+            <h2 style="margin-bottom: 16px; font-size: 1.5rem;">About trust & safety ratings</h2>
+            <p style="margin-bottom: 16px; color: #495057; line-height: 1.6;">
+                Every rental on RentSure is scored based on:
+            </p>
+            <ul style="margin-bottom: 20px; padding-left: 20px; color: #495057; line-height: 1.8;">
+                <li><strong>Trust score:</strong> Owner response time, complaints history, and rental agreement completion</li>
+                <li><strong>Safety score:</strong> Locality ratings, CCTV coverage, police proximity, and public transport access</li>
+                <li><strong>Budget fit:</strong> How well the rental matches your budget</li>
+                <li><strong>Distance fit:</strong> Proximity to colleges and workplaces</li>
+            </ul>
+            <button onclick="document.getElementById('aboutModal').style.display='none'" style="padding: 10px 20px; background: #0D6EFD; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: inherit;">Got it</button>
+        </div>
+    </div>
+
+    <!-- ========== JAVASCRIPT ========== -->
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // City selector
+        document.getElementById('citySelect').addEventListener('change', function() {
+            const city = this.value;
+            if (city) {
+                fetchRentals(city);
+            } else {
+                document.getElementById('rentalsContainer').innerHTML = '<div class="loading"><p>Select a city to view rentals</p></div>';
+            }
+        });
+
+        // About ratings link
+        document.getElementById('aboutRatingsLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('aboutModal').style.display = 'block';
+        });
+
+        // Close modal on outside click
+        document.getElementById('aboutModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+
+        // Fetch rentals from backend
+        async function fetchRentals(city) {
+            const container = document.getElementById('rentalsContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading rentals in ' + city.charAt(0).toUpperCase() + city.slice(1) + '...</p></div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/recommendations?city=${city}&top_n=5`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: ${response.status}`);
+                }
+                const data = await response.json();
+                renderRentals(data);
+            } catch (error) {
+                console.error('Error:', error);
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>Connection error</strong><br>
+                        Make sure the backend is running: <code>uvicorn app:app --reload</code>
+                    </div>
+                `;
+            }
+        }
+
+        // Render rentals
+        function renderRentals(data) {
+            const container = document.getElementById('rentalsContainer');
+            
+            if (!data.recommendations || data.recommendations.length === 0) {
+                container.innerHTML = '<div class="error-message">No rentals found</div>';
+                return;
+            }
+
+            // Update header
+            document.querySelector('.content-title').textContent = `Rentals in ${data.city}`;
+            document.querySelector('.content-subtitle').textContent = `${data.recommendations.length} properties • Sorted by suitability`;
+
+            let html = '<div class="rentals-grid">';
+            
+            data.recommendations.forEach(rental => {
+                const tags = getTags(rental);
+                html += `
+                    <div class="rental-card">
+                        <div class="card-image-placeholder">🏠</div>
+                        <div class="card-content">
+                            <div class="property-id">${rental.property_id}</div>
+                            <div class="property-price">₹${rental.rent.toLocaleString('en-IN')}/month</div>
+                            <div class="property-distance">📍 ${rental.distance_km} km away</div>
+                            <div class="property-description">${rental.description}</div>
+                            
+                            <div class="scores-row">
+                                <div class="score-badge">
+                                    <span>🛡️</span>
+                                    <span>Safety: <span class="score-number">${rental.safety_score}</span></span>
+                                </div>
+                                <div class="score-badge">
+                                    <span>✅</span>
+                                    <span>Trust: <span class="score-number">${rental.trust_score}</span></span>
+                                </div>
+                            </div>
+                            
+                            <div class="property-tags">
+                                ${tags.map(tag => `<span class="property-tag ${tag.class}">${tag.text}</span>`).join('')}
+                            </div>
+                            
+                            <button class="expand-btn" onclick="toggleDetails(this)">View details</button>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <div class="breakdown-section">
+                                <div class="breakdown-title">Score breakdown</div>
+                                <div class="breakdown-grid">
+                                    <div class="breakdown-item">
+                                        <div class="breakdown-item-label">Budget fit</div>
+                                        <div class="breakdown-item-value">${rental.score_breakdown.budget_fit.toFixed(1)}/30</div>
+                                    </div>
+                                    <div class="breakdown-item">
+                                        <div class="breakdown-item-label">Distance fit</div>
+                                        <div class="breakdown-item-value">${rental.score_breakdown.distance_fit.toFixed(1)}/30</div>
+                                    </div>
+                                    <div class="breakdown-item">
+                                        <div class="breakdown-item-label">Safety</div>
+                                        <div class="breakdown-item-value">${rental.score_breakdown.safety_contribution.toFixed(1)}/20</div>
+                                    </div>
+                                    <div class="breakdown-item">
+                                        <div class="breakdown-item-label">Trust</div>
+                                        <div class="breakdown-item-value">${rental.score_breakdown.trust_contribution.toFixed(1)}/20</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Get property tags
+        function getTags(rental) {
+            const tags = [];
+            
+            // Determine property type from description
+            if (rental.description.toLowerCase().includes('pg')) {
+                tags.push({ text: 'PG', class: '' });
+            } else if (rental.description.toLowerCase().includes('hostel')) {
+                tags.push({ text: 'Hostel', class: '' });
+            } else if (rental.description.toLowerCase().includes('1bhk')) {
+                tags.push({ text: '1BHK', class: '' });
+            }
+            
+            // High trust properties
+            if (rental.trust_score >= 85) {
+                tags.push({ text: 'Verified', class: 'verified' });
+            }
+            
+            // Close properties
+            if (rental.distance_km <= 3) {
+                tags.push({ text: 'Nearby', class: '' });
+            }
+            
+            // Check for specific features in description
+            if (rental.description.toLowerCase().includes('metro')) {
+                tags.push({ text: 'Metro access', class: '' });
+            }
+            
+            return tags;
+        }
+
+        // Toggle details
+        function toggleDetails(button) {
+            const card = button.closest('.rental-card');
+            const footer = card.querySelector('.card-footer');
+            
+            if (footer.classList.contains('show')) {
+                footer.classList.remove('show');
+                button.textContent = 'View details';
+            } else {
+                footer.classList.add('show');
+                button.textContent = 'Hide details';
+            }
+        }
+    </script>
+</body>
+</html>

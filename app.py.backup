@@ -1,0 +1,1192 @@
+"""
+RentSure API Backend
+
+A simple FastAPI REST application that exposes trust scoring and 
+rental recommendation logic for the RentSure web frontend.
+
+Run with: uvicorn app:app --reload
+"""
+
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Path
+from typing import List, Dict, Any, Optional, Tuple
+from pydantic import BaseModel
+from uuid import uuid4
+from datetime import datetime
+
+# Import our custom modules
+from trust_score import calculate_trust_score
+from rental_recommender import (
+    StudentProfile,
+    RentalProperty,
+    recommend_rentals,
+    calculate_rental_recommendation_score,
+)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="RentSure API",
+    description="AI-powered rental recommendation engine for students",
+    version="1.0.0"
+)
+
+# Enable CORS for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (fine for hackathon demo)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ============================================================================
+# Mock Data for Demo Purposes
+# ============================================================================
+
+# Sample student profile (India-specific budget in ₹)
+DEMO_STUDENT = StudentProfile(
+    max_budget=15000,  # ₹15,000 per month
+    preferred_distance_km=5.0
+)
+
+# India-specific rental properties by city
+RENTALS_BY_CITY = {
+    "pune": [
+        RentalProperty(
+            property_id="PUNE001",
+            rent=12000,
+            distance_km=2.5,
+            safety_score=92,
+            trust_score=88,
+            description="Safe PG near COEP College, Shivajinagar. 24/7 security, CCTV, no broker",
+            campus_fit_score=9.1,
+            police_distance_km=0.8,
+            cctv_coverage=92,
+            street_lighting=88,
+            transit_access=86,
+            price_fairness="Fair",
+            response_time_minutes=35,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Bank Transfer", "Cash"],
+            gender_preference="female",
+            reviews=[
+                {"tenant_name": "Priya S.", "rating": 5, "comment": "Great PG, safe area, responsive owner", "is_verified": True},
+                {"tenant_name": "Neha K.", "rating": 4, "comment": "Good facilities, little far from main market", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="PUNE002",
+            rent=18000,
+            distance_km=1.8,
+            safety_score=95,
+            trust_score=85,
+            description="Premium 1BHK in Aundh, walking distance to Symbiosis. Verified owner",
+            campus_fit_score=9.4,
+            police_distance_km=1.1,
+            cctv_coverage=90,
+            street_lighting=85,
+            transit_access=88,
+            price_fairness="High",
+            response_time_minutes=60,
+            complaints_count=1,
+            image_url="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Bank Transfer"],
+            gender_preference="any",
+            reviews=[
+                {"tenant_name": "Rahul M.", "rating": 4, "comment": "Nice flat, bit expensive but worth it", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="PUNE003",
+            rent=9500,
+            distance_km=6.5,
+            safety_score=78,
+            trust_score=80,
+            description="Budget-friendly hostel in Kothrud. Near PMPML bus stop, safe locality",
+            campus_fit_score=6.8,
+            police_distance_km=2.4,
+            cctv_coverage=70,
+            street_lighting=72,
+            transit_access=80,
+            price_fairness="Low",
+            response_time_minutes=90,
+            complaints_count=1,
+            image_url="https://images.unsplash.com/photo-1545324418-cc1a9a6fded0?w=500&h=400&fit=crop",
+            is_direct_owner=False,
+            availability_status="limited",
+            payment_methods=["Cash", "UPI"],
+            gender_preference="male",
+            reviews=[
+                {"tenant_name": "Amit P.", "rating": 3, "comment": "Decent for budget, maintenance could be better", "is_verified": False}
+            ]
+        ),
+        RentalProperty(
+            property_id="PUNE004",
+            rent=14000,
+            distance_km=3.2,
+            safety_score=88,
+            trust_score=92,
+            description="Girls hostel in Karve Nagar. Police station nearby, owner responds fast",
+            campus_fit_score=8.3,
+            police_distance_km=0.6,
+            cctv_coverage=85,
+            street_lighting=84,
+            transit_access=82,
+            price_fairness="Fair",
+            response_time_minutes=25,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1537225228614-056a7fb3fb1b?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Bank Transfer", "Cash"],
+            gender_preference="female",
+            reviews=[
+                {"tenant_name": "Sneha R.", "rating": 5, "comment": "Excellent hostel, very safe, owner is caring", "is_verified": True},
+                {"tenant_name": "Anjali T.", "rating": 5, "comment": "Highly recommend for girls", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="PUNE005",
+            rent=22000,
+            distance_km=1.2,
+            safety_score=96,
+            trust_score=90,
+            description="Luxury PG in Hinjewadi Phase 1. IT professionals preferred, zero complaints",
+            campus_fit_score=9.6,
+            police_distance_km=1.3,
+            cctv_coverage=95,
+            street_lighting=90,
+            transit_access=88,
+            price_fairness="High",
+            response_time_minutes=40,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1512917774080-9b274b3ce0c1?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="limited",
+            payment_methods=["UPI", "Bank Transfer"],
+            gender_preference="any",
+            reviews=[
+                {"tenant_name": "Karthik V.", "rating": 5, "comment": "Premium quality, great amenities", "is_verified": True}
+            ]
+        ),
+    ],
+    "bengaluru": [
+        RentalProperty(
+            property_id="BLR001",
+            rent=15000,
+            distance_km=2.0,
+            safety_score=90,
+            trust_score=87,
+            description="PG near Indiranagar Metro. Safe for women, 24/7 security, verified owner",
+            campus_fit_score=9.0,
+            police_distance_km=1.0,
+            cctv_coverage=91,
+            street_lighting=86,
+            transit_access=92,
+            price_fairness="Fair",
+            response_time_minutes=30,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "GPay", "PhonePe"],
+            gender_preference="female",
+            reviews=[
+                {"tenant_name": "Divya S.", "rating": 5, "comment": "Safe PG, metro nearby, great for working women", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="BLR002",
+            rent=20000,
+            distance_km=1.5,
+            safety_score=94,
+            trust_score=91,
+            description="1BHK in Koramangala 5th Block. Walking distance to startups, fast WiFi",
+            campus_fit_score=9.2,
+            police_distance_km=1.4,
+            cctv_coverage=88,
+            street_lighting=84,
+            transit_access=90,
+            price_fairness="High",
+            response_time_minutes=55,
+            complaints_count=1,
+            image_url="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Bank Transfer"],
+            gender_preference="any",
+            reviews=[
+                {"tenant_name": "Arjun K.", "rating": 4, "comment": "Good location, startup hub, a bit noisy", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="BLR003",
+            rent=11000,
+            distance_km=8.0,
+            safety_score=75,
+            trust_score=78,
+            description="Budget hostel in Marathahalli. Near bus depot, owner responds in 30 mins",
+            campus_fit_score=6.2,
+            police_distance_km=2.8,
+            cctv_coverage=68,
+            street_lighting=70,
+            transit_access=78,
+            price_fairness="Low",
+            response_time_minutes=75,
+            complaints_count=1,
+            image_url="https://images.unsplash.com/photo-1503672260252-cf088d43f26f?w=500&h=400&fit=crop",
+            is_direct_owner=False,
+            availability_status="available",
+            payment_methods=["Cash", "UPI"],
+            gender_preference="male",
+            reviews=[
+                {"tenant_name": "Ravi B.", "rating": 3, "comment": "Okay for budget, far from city center", "is_verified": False}
+            ]
+        ),
+        RentalProperty(
+            property_id="BLR004",
+            rent=16500,
+            distance_km=3.5,
+            safety_score=89,
+            trust_score=93,
+            description="Safe PG in HSR Layout. Near BDA complex, police patrolling area",
+            campus_fit_score=8.4,
+            police_distance_km=1.2,
+            cctv_coverage=86,
+            street_lighting=83,
+            transit_access=85,
+            price_fairness="Fair",
+            response_time_minutes=28,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1540932239986-310128078ceb?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Bank Transfer", "Cash"],
+            gender_preference="any",
+            reviews=[
+                {"tenant_name": "Meera J.", "rating": 5, "comment": "Safe area, good maintenance", "is_verified": True},
+                {"tenant_name": "Raj K.", "rating": 4, "comment": "Peaceful locality", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="BLR005",
+            rent=25000,
+            distance_km=0.8,
+            safety_score=97,
+            trust_score=95,
+            description="Premium flat in Whitefield. Tech park proximity, gated community, zero broker",
+            campus_fit_score=9.7,
+            police_distance_km=1.6,
+            cctv_coverage=96,
+            street_lighting=92,
+            transit_access=90,
+            price_fairness="High",
+            response_time_minutes=35,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1559080241-cd4628902d4a?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="limited",
+            payment_methods=["UPI", "Bank Transfer"],
+            gender_preference="any",
+            reviews=[
+                {"tenant_name": "Vikram S.", "rating": 5, "comment": "Luxury living, worth the price", "is_verified": True}
+            ]
+        ),
+    ],
+    "nagpur": [
+        RentalProperty(
+            property_id="NGP001",
+            rent=9500,
+            distance_km=2.4,
+            safety_score=88,
+            trust_score=86,
+            description="Safe PG near VNIT campus, Laxmi Nagar. CCTV, warden on-site",
+            campus_fit_score=8.8,
+            police_distance_km=0.7,
+            cctv_coverage=87,
+            street_lighting=84,
+            transit_access=80,
+            price_fairness="Fair",
+            response_time_minutes=32,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1520932091298-1b434c919eba?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Cash", "Bank Transfer"],
+            gender_preference="female",
+            reviews=[
+                {"tenant_name": "Pooja D.", "rating": 5, "comment": "Safe PG near college, warden is caring", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="NGP002",
+            rent=12000,
+            distance_km=1.9,
+            safety_score=90,
+            trust_score=89,
+            description="1BHK in Dharampeth. Walking distance to colleges, verified owner",
+            campus_fit_score=9.0,
+            police_distance_km=0.9,
+            cctv_coverage=89,
+            street_lighting=86,
+            transit_access=82,
+            price_fairness="Fair",
+            response_time_minutes=40,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Bank Transfer"],
+            gender_preference="any",
+            reviews=[
+                {"tenant_name": "Ankit M.", "rating": 4, "comment": "Good flat, near college", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="NGP003",
+            rent=8000,
+            distance_km=5.8,
+            safety_score=78,
+            trust_score=80,
+            description="Budget hostel in Pratap Nagar. Near bus stop, decent locality",
+            campus_fit_score=6.5,
+            police_distance_km=2.2,
+            cctv_coverage=72,
+            street_lighting=70,
+            transit_access=76,
+            price_fairness="Low",
+            response_time_minutes=80,
+            complaints_count=1,
+            image_url="https://images.unsplash.com/photo-1505692952047-643ca81abfa6?w=500&h=400&fit=crop",
+            is_direct_owner=False,
+            availability_status="available",
+            payment_methods=["Cash"],
+            gender_preference="male",
+            reviews=[
+                {"tenant_name": "Suresh G.", "rating": 3, "comment": "Very budget-friendly, basic amenities", "is_verified": False}
+            ]
+        ),
+        RentalProperty(
+            property_id="NGP004",
+            rent=13500,
+            distance_km=3.1,
+            safety_score=91,
+            trust_score=92,
+            description="Girls PG in Ramdaspeth. Police station nearby, fast owner response",
+            campus_fit_score=8.6,
+            police_distance_km=0.6,
+            cctv_coverage=90,
+            street_lighting=88,
+            transit_access=83,
+            price_fairness="Fair",
+            response_time_minutes=22,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1537380540434-ba8e4d52eac9?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="available",
+            payment_methods=["UPI", "Bank Transfer", "Cash"],
+            gender_preference="female",
+            reviews=[
+                {"tenant_name": "Tanvi P.", "rating": 5, "comment": "Safest PG in Nagpur, owner responds instantly", "is_verified": True},
+                {"tenant_name": "Shreya N.", "rating": 5, "comment": "Highly recommend for girls", "is_verified": True}
+            ]
+        ),
+        RentalProperty(
+            property_id="NGP005",
+            rent=17000,
+            distance_km=1.4,
+            safety_score=93,
+            trust_score=90,
+            description="Premium flat in Civil Lines. Gated society, power backup",
+            campus_fit_score=9.1,
+            police_distance_km=1.1,
+            cctv_coverage=92,
+            street_lighting=89,
+            transit_access=84,
+            price_fairness="High",
+            response_time_minutes=45,
+            complaints_count=0,
+            image_url="https://images.unsplash.com/photo-1560519038-0ac8d7bb46a7?w=500&h=400&fit=crop",
+            is_direct_owner=True,
+            availability_status="limited",
+            payment_methods=["UPI", "Bank Transfer"],
+            gender_preference="any",
+            reviews=[
+                {"tenant_name": "Nikhil R.", "rating": 5, "comment": "Premium quality in Nagpur, gated community", "is_verified": True}
+            ]
+        ),
+    ]
+}
+
+# ---------------------------------------------------------------------------
+# Enrichment data for proximity, owners, and neighborhood analytics
+# ---------------------------------------------------------------------------
+
+CITY_META = {
+    "pune": {
+        "neighborhoods": ["Shivajinagar", "Aundh", "Kothrud", "Karve Nagar", "Hinjewadi"],
+        "colleges": ["COEP", "Symbiosis", "MIT-WPU", "Fergusson College", "PICT"],
+        "office_hubs": ["Hinjewadi IT Park", "Magarpatta", "Kharadi EON", "Baner Business Bay", "Viman Nagar Hub"],
+        "zones": ["Central", "West", "West", "North", "West"],
+        "tiffin": [
+            {"provider": "Dagdusheth Tiffins", "price_per_meal": 70, "veg_only": True, "rating": 4.3},
+            {"provider": "Aundh HomeMeals", "price_per_meal": 85, "veg_only": False, "rating": 4.5},
+        ],
+    },
+    "bengaluru": {
+        "neighborhoods": ["Indiranagar", "Koramangala", "Marathahalli", "HSR Layout", "Whitefield"],
+        "colleges": ["Christ University", "St. Joseph's", "PES", "IIM-B", "RVCE"],
+        "office_hubs": ["Manyata Tech Park", "Koramangala Startup Hub", "Sarjapur ORR", "HSR Sector 2", "Whitefield ITPL"],
+        "zones": ["East", "South", "East", "South", "East"],
+        "tiffin": [
+            {"provider": "Udupi Tiffin Hub", "price_per_meal": 80, "veg_only": True, "rating": 4.4},
+            {"provider": "Namma Meals", "price_per_meal": 95, "veg_only": False, "rating": 4.2},
+        ],
+    },
+    "nagpur": {
+        "neighborhoods": ["Laxmi Nagar", "Dharampeth", "Pratap Nagar", "Ramdaspeth", "Sadar"],
+        "colleges": ["VNIT", "RTMNU", "YCCE", "RCOEM", "LIT"],
+        "office_hubs": ["MIHAN", "Civil Lines", "Sitabuldi", "Sadar Market", "Dharampeth Hub"],
+        "zones": ["Central", "West", "East", "Central", "Central"],
+        "tiffin": [
+            {"provider": "Orange City Mess", "price_per_meal": 60, "veg_only": True, "rating": 4.1},
+            {"provider": "Nagpur Meal Box", "price_per_meal": 75, "veg_only": False, "rating": 4.0},
+        ],
+    },
+}
+
+OWNER_INDEX: Dict[str, Dict[str, Any]] = {}
+
+
+def enrich_rentals() -> None:
+    for city_key, rentals in RENTALS_BY_CITY.items():
+        meta = CITY_META.get(city_key, {})
+        neighborhoods = meta.get("neighborhoods", [])
+        colleges = meta.get("colleges", [])
+        office_hubs = meta.get("office_hubs", [])
+        zones = meta.get("zones", [])
+        tiffin_options = meta.get("tiffin", [])
+
+        for idx, rental in enumerate(rentals):
+            rental.neighborhood = neighborhoods[idx % len(neighborhoods)] if neighborhoods else None
+            rental.city_zone = zones[idx % len(zones)] if zones else None
+            rental.nearby_college = colleges[idx % len(colleges)] if colleges else None
+            rental.nearby_office_hub = office_hubs[idx % len(office_hubs)] if office_hubs else None
+            rental.college_distance_km = max(0.6, round(rental.distance_km - 0.4, 1))
+            rental.office_distance_km = max(1.0, round(rental.distance_km + 1.1, 1))
+            rental.commute_minutes = int((rental.distance_km * 12) + 8)
+            rental.women_safety_index = min(100, rental.safety_score + 4)
+            rental.crime_index = max(5, 100 - rental.safety_score)
+            rental.night_transit_score = rental.transit_access
+            rental.tiffin_options = tiffin_options
+
+            owner_id = f"OWN-{city_key[:3].upper()}-{idx + 1:02d}"
+            owner_name = f"{rental.neighborhood} Rentals"
+            owner_average_rating = round(min(4.9, 3.8 + (rental.trust_score / 100) * 1.2), 1)
+            agreement_completed = rental.trust_score >= 85
+
+            rental.owner_id = owner_id
+            rental.owner_name = owner_name
+            rental.owner_average_rating = owner_average_rating
+            rental.owner_response_time_minutes = rental.response_time_minutes
+            rental.owner_complaints_count = rental.complaints_count
+            rental.agreement_completed = agreement_completed
+
+            OWNER_INDEX[owner_id] = {
+                "owner_id": owner_id,
+                "name": owner_name,
+                "average_rating": owner_average_rating,
+                "response_time_minutes": rental.response_time_minutes,
+                "complaints_count": rental.complaints_count,
+                "agreement_completed": agreement_completed,
+            }
+
+
+enrich_rentals()
+
+# Simple in-memory auth and payment stores (demo only)
+USERS: Dict[str, Dict[str, Any]] = {}
+TOKENS: Dict[str, Dict[str, Any]] = {}
+PAYMENTS: Dict[str, Dict[str, Any]] = {}
+
+# Default rentals (Pune for demo)
+DEMO_RENTALS = RENTALS_BY_CITY["pune"]
+
+# Sample owner data for trust score demo
+DEMO_OWNER = {
+    "owner_id": "OWNER001", 
+    "name": "John's Properties", 
+    "average_rating": 4.7, 
+    "response_time_minutes": 45, 
+    "complaints_count": 1, 
+    "agreement_completed": True 
+}
+
+
+# ============================================================================
+# Request Models
+# ============================================================================
+
+
+class AuthRequest(BaseModel):
+    username: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    role: str = "tenant"
+
+
+class AgreementRequest(BaseModel):
+    property_id: str
+    tenant_name: str
+    start_date: str
+    duration_months: int = 11
+    deposit_amount: int = 0
+
+
+class PaymentInitiateRequest(BaseModel):
+    property_id: str
+    amount: int
+    method: str
+
+
+class PaymentConfirmRequest(BaseModel):
+    transaction_id: str
+
+
+class ExpenseSplitRequest(BaseModel):
+    total_rent: int
+    utilities: int = 0
+    roommates: int = 1
+
+
+def find_rental(property_id: str) -> Optional[RentalProperty]:
+    property_id = property_id.upper().strip()
+    for rentals in RENTALS_BY_CITY.values():
+        for rental in rentals:
+            if rental.property_id == property_id:
+                return rental
+    return None
+
+
+def find_rental_with_city(property_id: str) -> Tuple[Optional[str], Optional[RentalProperty]]:
+    property_id = property_id.upper().strip()
+    for city_key, rentals in RENTALS_BY_CITY.items():
+        for rental in rentals:
+            if rental.property_id == property_id:
+                return city_key, rental
+    return None, None
+
+
+def search_score(query: str, rental: RentalProperty) -> float:
+    haystack = " ".join([
+        rental.description or "",
+        rental.neighborhood or "",
+        rental.nearby_college or "",
+        rental.nearby_office_hub or "",
+    ]).lower()
+    tokens = [t for t in query.lower().split() if t]
+    matches = sum(1 for t in tokens if t in haystack)
+    return matches * 8.5
+
+
+# ============================================================================
+# ENDPOINTS
+# ============================================================================
+
+@app.get("/")
+async def welcome() -> Dict[str, Any]:
+    """
+    Welcome endpoint - Returns API information.
+    """
+    return {
+        "message": "Welcome to RentSure API",
+        "description": "AI-powered rental recommendation engine for students",
+        "endpoints": {
+            "GET /": "This welcome message",
+            "GET /trust-score": "Calculate sample owner trust score",
+            "GET /recommendations": "Get top rental recommendations",
+            "GET /search": "Smart search and ranking",
+            "GET /proximity/{property_id}": "Proximity analysis",
+            "GET /owner/{owner_id}/trust": "Owner trust score",
+            "GET /neighborhood/{property_id}": "Neighborhood analytics",
+            "GET /tiffin/{property_id}": "Tiffin providers",
+            "POST /agreement": "Generate agreement draft",
+            "POST /payment/initiate": "Start payment",
+            "POST /payment/confirm": "Confirm payment",
+            "POST /expenses/split": "Split shared expenses",
+            "POST /auth/register": "Register a user",
+            "POST /auth/login": "Login",
+        },
+        "version": "1.0.0"
+    }
+@app.get("/trust-score")
+async def get_trust_score() -> Dict[str, Any]:
+    """
+    Calculate and return a sample Tenant-Owner Trust Score.
+    
+    This endpoint demonstrates the trust scoring algorithm with sample data.
+    In a real application, this would accept owner_id as a query parameter.
+    
+    Returns:
+        JSON with trust score, label, and scoring breakdown
+    """
+
+    # Calculate trust score using the demo owner data
+    trust_score, trust_label = calculate_trust_score(
+        average_rating=DEMO_OWNER["average_rating"],
+        response_time_minutes=DEMO_OWNER["response_time_minutes"],
+        complaints_count=DEMO_OWNER["complaints_count"],
+        agreement_completed=DEMO_OWNER["agreement_completed"]
+    )
+
+    return {
+        "owner": {
+            "owner_id": DEMO_OWNER["owner_id"],
+            "name": DEMO_OWNER["name"],
+        },
+        "trust_score": trust_score,
+        "trust_label": trust_label,
+        "scoring_details": {
+            "average_rating": DEMO_OWNER["average_rating"],
+            "response_time_minutes": DEMO_OWNER["response_time_minutes"],
+            "complaints_count": DEMO_OWNER["complaints_count"],
+            "agreement_completed": DEMO_OWNER["agreement_completed"],
+        },
+        "explanation": (
+            f"Owner '{DEMO_OWNER['name']}' has a trust score of {trust_score}/100 "
+            f"({trust_label}). This is based on their {DEMO_OWNER['average_rating']} "
+            f"rating, {DEMO_OWNER['response_time_minutes']}-minute response time, "
+            f"{DEMO_OWNER['complaints_count']} complaint(s), and agreement completion status."
+        )
+    }
+
+
+@app.get("/recommendations")
+async def get_recommendations(city: str = "pune", top_n: int = 3) -> Dict[str, Any]:
+    """
+    Get top rental recommendations for a sample student in a specific Indian city.
+    
+    Query Parameters:
+        city (str): City name - "nagpur", "pune", or "bengaluru" (default: "pune")
+        top_n (int): Number of top recommendations to return (default: 3, max: 5)
+    
+    Returns:
+        JSON with ranked rental recommendations and scoring breakdown
+    """
+
+    # Normalize city name
+    city = city.lower().strip()
+    if city not in RENTALS_BY_CITY:
+        city = "pune"  # Default to Pune if invalid city
+    
+    # Limit top_n to reasonable values
+    top_n = min(max(1, top_n), 5)
+
+    # Get recommendations using the recommend_rentals function
+    city_rentals = RENTALS_BY_CITY[city]
+    recommendations = recommend_rentals(DEMO_STUDENT, city_rentals, top_n=top_n)
+
+    # Format recommendations for JSON response
+    formatted_recommendations = []
+    for i, rec in enumerate(recommendations, 1):
+        formatted_recommendations.append({
+            "rank": i,
+            "property_id": rec.property_id,
+            "overall_score": round(rec.overall_score, 2),
+            "rent": rec.rent,
+            "distance_km": rec.distance_km,
+            "safety_score": rec.safety_score,
+            "trust_score": rec.trust_score,
+            "campus_fit_score": rec.campus_fit_score,
+            "police_distance_km": rec.police_distance_km,
+            "cctv_coverage": rec.cctv_coverage,
+            "street_lighting": rec.street_lighting,
+            "transit_access": rec.transit_access,
+            "price_fairness": rec.price_fairness,
+            "response_time_minutes": rec.response_time_minutes,
+            "complaints_count": rec.complaints_count,
+            "description": rec.description,
+            "image_url": rec.image_url,
+            "is_direct_owner": rec.is_direct_owner,
+            "availability_status": rec.availability_status,
+            "payment_methods": rec.payment_methods,
+            "gender_preference": rec.gender_preference,
+            "reviews": rec.reviews,
+            "owner_id": rec.owner_id,
+            "owner_name": rec.owner_name,
+            "owner_average_rating": rec.owner_average_rating,
+            "owner_response_time_minutes": rec.owner_response_time_minutes,
+            "owner_complaints_count": rec.owner_complaints_count,
+            "agreement_completed": rec.agreement_completed,
+            "neighborhood": rec.neighborhood,
+            "city_zone": rec.city_zone,
+            "nearby_college": rec.nearby_college,
+            "college_distance_km": rec.college_distance_km,
+            "nearby_office_hub": rec.nearby_office_hub,
+            "office_distance_km": rec.office_distance_km,
+            "commute_minutes": rec.commute_minutes,
+            "women_safety_index": rec.women_safety_index,
+            "crime_index": rec.crime_index,
+            "night_transit_score": rec.night_transit_score,
+            "tiffin_options": rec.tiffin_options,
+            "score_breakdown": {
+                "budget_fit": round(rec.budget_fit_score, 2),
+                "distance_fit": round(rec.distance_fit_score, 2),
+                "safety_contribution": round(rec.safety_score_contrib, 2),
+                "trust_contribution": round(rec.trust_score_contrib, 2),
+            }
+        })
+
+    return {
+        "city": city.title(),
+        "student_profile": {
+            "max_budget": f"₹{DEMO_STUDENT.max_budget:,}",
+            "preferred_distance_km": DEMO_STUDENT.preferred_distance_km,
+        },
+        "total_properties_evaluated": len(city_rentals),
+        "recommendations_returned": len(formatted_recommendations),
+        "recommendations": formatted_recommendations,
+        "explanation": (
+            f"Based on your budget of ₹{DEMO_STUDENT.max_budget:,}/month "
+            f"and preferred distance of {DEMO_STUDENT.preferred_distance_km}km in {city.title()}, "
+            f"these are the top {len(formatted_recommendations)} verified rentals ranked by suitability."
+        )
+    }
+
+
+@app.get("/cities")
+async def get_cities() -> Dict[str, Any]:
+    """
+    Return supported cities for the frontend dropdown.
+    """
+    return {
+        "cities": [
+            {"id": "nagpur", "name": "Nagpur"},
+            {"id": "pune", "name": "Pune"},
+            {"id": "bengaluru", "name": "Bengaluru"},
+        ]
+    }
+
+
+@app.post("/auth/register")
+async def register(request: RegisterRequest) -> Dict[str, Any]:
+    username = request.username.strip().lower()
+    if username in USERS:
+        return JSONResponse(status_code=400, content={"error": "User already exists"})
+
+    USERS[username] = {
+        "username": username,
+        "password": request.password,
+        "role": request.role,
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+    token = str(uuid4())
+    TOKENS[token] = {"username": username, "role": request.role}
+    return {
+        "token": token,
+        "user": {"username": username, "role": request.role}
+    }
+
+
+@app.post("/auth/login")
+async def login(request: AuthRequest) -> Dict[str, Any]:
+    username = request.username.strip().lower()
+    user = USERS.get(username)
+    if not user or user.get("password") != request.password:
+        return JSONResponse(status_code=401, content={"error": "Invalid credentials"})
+
+    token = str(uuid4())
+    TOKENS[token] = {"username": username, "role": user.get("role", "tenant")}
+    return {
+        "token": token,
+        "user": {"username": username, "role": user.get("role", "tenant")}
+    }
+
+
+@app.get("/search")
+async def search_rentals(city: str = "pune", query: str = "", top_n: int = 5, rank_by: str = "match") -> Dict[str, Any]:
+    city = city.lower().strip()
+    if city not in RENTALS_BY_CITY:
+        city = "pune"
+    top_n = min(max(1, top_n), 10)
+
+    results = []
+    for rental in RENTALS_BY_CITY[city]:
+        rec = calculate_rental_recommendation_score(rental, DEMO_STUDENT)
+        match_score = search_score(query, rental) if query else 0.0
+
+        if rank_by == "college":
+            rank_score = max(0, 100 - (rental.college_distance_km or rental.distance_km) * 10)
+        elif rank_by == "office":
+            rank_score = max(0, 100 - (rental.office_distance_km or rental.distance_km) * 10)
+        elif rank_by == "safety":
+            rank_score = rental.safety_score
+        else:
+            rank_score = rec.overall_score + match_score
+
+        results.append({
+            "property_id": rec.property_id,
+            "overall_score": round(rec.overall_score, 2),
+            "relevance_score": round(rank_score, 2),
+            "rent": rec.rent,
+            "distance_km": rec.distance_km,
+            "safety_score": rec.safety_score,
+            "trust_score": rec.trust_score,
+            "campus_fit_score": rec.campus_fit_score,
+            "police_distance_km": rec.police_distance_km,
+            "cctv_coverage": rec.cctv_coverage,
+            "street_lighting": rec.street_lighting,
+            "transit_access": rec.transit_access,
+            "price_fairness": rec.price_fairness,
+            "response_time_minutes": rec.response_time_minutes,
+            "complaints_count": rec.complaints_count,
+            "description": rec.description,
+            "image_url": rec.image_url,
+            "is_direct_owner": rec.is_direct_owner,
+            "availability_status": rec.availability_status,
+            "payment_methods": rec.payment_methods,
+            "gender_preference": rec.gender_preference,
+            "reviews": rec.reviews,
+            "owner_id": rec.owner_id,
+            "owner_name": rec.owner_name,
+            "owner_average_rating": rec.owner_average_rating,
+            "owner_response_time_minutes": rec.owner_response_time_minutes,
+            "owner_complaints_count": rec.owner_complaints_count,
+            "agreement_completed": rec.agreement_completed,
+            "neighborhood": rec.neighborhood,
+            "city_zone": rec.city_zone,
+            "nearby_college": rec.nearby_college,
+            "college_distance_km": rec.college_distance_km,
+            "nearby_office_hub": rec.nearby_office_hub,
+            "office_distance_km": rec.office_distance_km,
+            "commute_minutes": rec.commute_minutes,
+            "women_safety_index": rec.women_safety_index,
+            "crime_index": rec.crime_index,
+            "night_transit_score": rec.night_transit_score,
+            "tiffin_options": rec.tiffin_options,
+        })
+
+    results.sort(key=lambda x: x["relevance_score"], reverse=True)
+    return {
+        "city": city.title(),
+        "query": query,
+        "rank_by": rank_by,
+        "results": results[:top_n]
+    }
+
+
+@app.get("/owner/{owner_id}/trust")
+async def get_owner_trust(owner_id: str) -> Dict[str, Any]:
+    owner = OWNER_INDEX.get(owner_id)
+    if not owner:
+        return JSONResponse(status_code=404, content={"error": "Owner not found"})
+
+    trust_score, trust_label = calculate_trust_score(
+        average_rating=owner["average_rating"],
+        response_time_minutes=owner["response_time_minutes"],
+        complaints_count=owner["complaints_count"],
+        agreement_completed=owner["agreement_completed"],
+    )
+
+    return {
+        "owner": owner,
+        "trust_score": trust_score,
+        "trust_label": trust_label,
+    }
+
+
+@app.get("/proximity/{property_id}")
+async def proximity_details(property_id: str) -> Dict[str, Any]:
+    rental = find_rental(property_id)
+    if not rental:
+        return JSONResponse(status_code=404, content={"error": "Property not found"})
+
+    college_distance = rental.college_distance_km or rental.distance_km
+    office_distance = rental.office_distance_km or rental.distance_km
+    proximity_score = max(0, 100 - (college_distance * 8 + office_distance * 4))
+    best_for = "college" if college_distance <= office_distance else "office"
+
+    return {
+        "property_id": rental.property_id,
+        "nearby_college": rental.nearby_college,
+        "college_distance_km": college_distance,
+        "nearby_office_hub": rental.nearby_office_hub,
+        "office_distance_km": office_distance,
+        "commute_minutes": rental.commute_minutes,
+        "proximity_score": round(proximity_score, 1),
+        "best_for": best_for
+    }
+
+
+@app.get("/neighborhood/{property_id}")
+async def neighborhood_analytics(property_id: str) -> Dict[str, Any]:
+    rental = find_rental(property_id)
+    if not rental:
+        return JSONResponse(status_code=404, content={"error": "Property not found"})
+
+    return {
+        "property_id": rental.property_id,
+        "neighborhood": rental.neighborhood,
+        "city_zone": rental.city_zone,
+        "safety_index": rental.safety_score,
+        "women_safety_index": rental.women_safety_index,
+        "crime_index": rental.crime_index,
+        "night_transit_score": rental.night_transit_score,
+    }
+
+
+@app.get("/tiffin/{property_id}")
+async def tiffin_options(property_id: str) -> Dict[str, Any]:
+    rental = find_rental(property_id)
+    if not rental:
+        return JSONResponse(status_code=404, content={"error": "Property not found"})
+
+    return {
+        "property_id": rental.property_id,
+        "options": rental.tiffin_options or []
+    }
+
+
+@app.post("/agreement")
+async def generate_agreement(request: AgreementRequest) -> Dict[str, Any]:
+    city_key, rental = find_rental_with_city(request.property_id)
+    if not rental:
+        return JSONResponse(status_code=404, content={"error": "Property not found"})
+
+    agreement_id = f"AGR-{uuid4().hex[:8].upper()}"
+    agreement_text = (
+        f"RENTAL AGREEMENT\n\n"
+        f"Agreement ID: {agreement_id}\n"
+        f"Tenant: {request.tenant_name}\n"
+        f"Property: {rental.property_id} ({rental.neighborhood}, {city_key.title()})\n"
+        f"Monthly Rent: ₹{rental.rent}\n"
+        f"Deposit: ₹{request.deposit_amount}\n"
+        f"Start Date: {request.start_date}\n"
+        f"Duration: {request.duration_months} months\n\n"
+        f"Terms: Tenant will pay rent on time, maintain the property, and comply with building rules.\n"
+        f"Owner: {rental.owner_name} ({rental.owner_id})\n"
+    )
+
+    return {
+        "agreement_id": agreement_id,
+        "generated_at": datetime.utcnow().isoformat(),
+        "agreement_text": agreement_text
+    }
+
+
+@app.post("/payment/initiate")
+async def payment_initiate(request: PaymentInitiateRequest) -> Dict[str, Any]:
+    rental = find_rental(request.property_id)
+    if not rental:
+        return JSONResponse(status_code=404, content={"error": "Property not found"})
+
+    transaction_id = f"TXN-{uuid4().hex[:10].upper()}"
+    PAYMENTS[transaction_id] = {
+        "transaction_id": transaction_id,
+        "property_id": request.property_id,
+        "amount": request.amount,
+        "method": request.method,
+        "status": "pending",
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+    return {
+        "transaction_id": transaction_id,
+        "status": "pending",
+        "upi_vpa": "rentsure@upi",
+        "instructions": "Use the UPI VPA or bank transfer details to complete payment in your app."
+    }
+
+
+@app.post("/payment/confirm")
+async def payment_confirm(request: PaymentConfirmRequest) -> Dict[str, Any]:
+    payment = PAYMENTS.get(request.transaction_id)
+    if not payment:
+        return JSONResponse(status_code=404, content={"error": "Transaction not found"})
+
+    payment["status"] = "success"
+    payment["confirmed_at"] = datetime.utcnow().isoformat()
+    return {
+        "transaction_id": request.transaction_id,
+        "status": "success"
+    }
+
+
+@app.post("/expenses/split")
+async def split_expenses(request: ExpenseSplitRequest) -> Dict[str, Any]:
+    roommates = max(1, request.roommates)
+    total = request.total_rent + request.utilities
+    per_person = round(total / roommates, 2)
+
+    return {
+        "total": total,
+        "roommates": roommates,
+        "per_person": per_person,
+        "breakdown": {
+            "rent": request.total_rent,
+            "utilities": request.utilities
+        }
+    }
+
+
+@app.get("/rental/{property_id}")
+async def get_rental_details(property_id: str = Path(..., description="Rental property ID")) -> Dict[str, Any]:
+    """
+    Return a single rental by property_id with city context.
+    """
+    property_id = property_id.upper().strip()
+
+    for city_key, rentals in RENTALS_BY_CITY.items():
+        for rental in rentals:
+            if rental.property_id == property_id:
+                score = calculate_rental_recommendation_score(rental, DEMO_STUDENT)
+                return {
+                    "city": city_key.title(),
+                    "property": {
+                        "property_id": rental.property_id,
+                        "rent": rental.rent,
+                        "distance_km": rental.distance_km,
+                        "safety_score": rental.safety_score,
+                        "trust_score": rental.trust_score,
+                        "campus_fit_score": rental.campus_fit_score,
+                        "police_distance_km": rental.police_distance_km,
+                        "cctv_coverage": rental.cctv_coverage,
+                        "street_lighting": rental.street_lighting,
+                        "transit_access": rental.transit_access,
+                        "price_fairness": rental.price_fairness,
+                        "response_time_minutes": rental.response_time_minutes,
+                        "complaints_count": rental.complaints_count,
+                        "description": rental.description,
+                        "image_url": rental.image_url,
+                        "is_direct_owner": rental.is_direct_owner,
+                        "availability_status": rental.availability_status,
+                        "payment_methods": rental.payment_methods,
+                        "gender_preference": rental.gender_preference,
+                        "reviews": rental.reviews,
+                        "owner_id": rental.owner_id,
+                        "owner_name": rental.owner_name,
+                        "owner_average_rating": rental.owner_average_rating,
+                        "owner_response_time_minutes": rental.owner_response_time_minutes,
+                        "owner_complaints_count": rental.owner_complaints_count,
+                        "agreement_completed": rental.agreement_completed,
+                        "neighborhood": rental.neighborhood,
+                        "city_zone": rental.city_zone,
+                        "nearby_college": rental.nearby_college,
+                        "college_distance_km": rental.college_distance_km,
+                        "nearby_office_hub": rental.nearby_office_hub,
+                        "office_distance_km": rental.office_distance_km,
+                        "commute_minutes": rental.commute_minutes,
+                        "women_safety_index": rental.women_safety_index,
+                        "crime_index": rental.crime_index,
+                        "night_transit_score": rental.night_transit_score,
+                        "tiffin_options": rental.tiffin_options,
+                    },
+                    "overall_score": round(score.overall_score, 2),
+                    "score_breakdown": {
+                        "budget_fit": round(score.budget_fit_score, 2),
+                        "distance_fit": round(score.distance_fit_score, 2),
+                        "safety_contribution": round(score.safety_score_contrib, 2),
+                        "trust_contribution": round(score.trust_score_contrib, 2),
+                    }
+                }
+
+    return JSONResponse(
+        status_code=404,
+        content={"error": "Not Found", "message": "Rental property not found"}
+    )
+
+
+@app.get("/trust-metrics")
+async def trust_metrics() -> Dict[str, Any]:
+    """
+    Explain how trust and safety scores are computed.
+    """
+    return {
+        "trust_score": [
+            "Owner response time",
+            "Tenant complaints history",
+            "Average ratings",
+            "Agreement completion",
+        ],
+        "safety_score": [
+            "Locality safety rating",
+            "CCTV coverage",
+            "Police proximity",
+            "Public transport access",
+        ],
+        "notes": "Scores are explainable and derived from observable behaviors and locality features."
+    }
+
+
+# ============================================================================
+# Health Check Endpoint (Optional but useful for deployment)
+# ============================================================================
+
+@app.get("/health")
+async def health_check() -> Dict[str, str]:
+    """
+    Health check endpoint - Verifies API is running.
+    """
+    return {"status": "healthy", "service": "RentSure API"}
+
+
+# ============================================================================
+# Error Handling
+# ============================================================================
+
+@app.get("/error-example")
+async def error_example() -> Dict[str, str]:
+    """
+    Example error response (for testing error handling on frontend).
+    """
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": "Bad Request",
+            "message": "This is an example error response",
+            "details": "Invalid query parameters"
+        }
+    )
+
+
+# ============================================================================
+# Run Instructions
+# ============================================================================
+
+"""
+To run this API locally:
+
+1. Install dependencies:
+   pip install fastapi uvicorn
+
+2. Run the server:
+   uvicorn app:app --reload
+
+3. Access the API:
+   - Base URL: http://localhost:8000
+   - Swagger UI: http://localhost:8000/docs
+   - ReDoc: http://localhost:8000/redoc
+
+4. Example API calls:
+   - GET http://localhost:8000/
+   - GET http://localhost:8000/trust-score
+   - GET http://localhost:8000/recommendations
+   - GET http://localhost:8000/recommendations?top_n=3
+   - GET http://localhost:8000/health
+
+5. For production deployment:
+   - Use gunicorn: gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app
+   - Or use docker for containerization
+"""
