@@ -15,6 +15,7 @@ import OwnerDashboard from "./pages/OwnerDashboard.jsx";
 import TopNav from "./components/TopNav.jsx";
 import Footer from "./components/Footer.jsx";
 
+// RentSure v2.1 - Updated Feb 3, 2026
 export default function App() {
   return (
     <AuthProvider>
