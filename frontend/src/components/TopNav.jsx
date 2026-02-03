@@ -13,14 +13,32 @@ export default function TopNav() {
   return (
     <header className="header">
       <div className="container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '0 20px',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
           {/* Logo */}
-          <Link to="/" style={{ textDecoration: 'none', color: '#0D6EFD', fontWeight: 'bold', fontSize: '1.5rem' }}>
+          <Link to="/" style={{ 
+            textDecoration: 'none', 
+            color: '#0D6EFD', 
+            fontWeight: 'bold', 
+            fontSize: '1.5rem',
+            minWidth: 'fit-content'
+          }}>
             🏠 RentSure
           </Link>
 
           {/* Navigation Links */}
-          <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <nav style={{ 
+            display: 'flex', 
+            gap: '20px', 
+            alignItems: 'center',
+            flexWrap: 'wrap'
+          }}>
             {isAuthenticated ? (
               <>
                 {user?.role === 'tenant' && (

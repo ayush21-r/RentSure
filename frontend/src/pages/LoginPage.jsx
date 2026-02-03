@@ -72,139 +72,235 @@ export default function LoginPage() {
 
   return (
     <div style={{ 
-      maxWidth: '500px', 
-      margin: '0 auto', 
-      padding: '40px 20px',
       minHeight: '100vh',
       display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center'
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#f8f9fa',
+      padding: '20px'
     }}>
-      <h1 style={{ textAlign: 'center', color: '#0D6EFD', marginBottom: '10px' }}>
-        🏠 RentSure
-      </h1>
-      <p style={{ textAlign: 'center', color: '#6c757d', marginBottom: '40px' }}>
-        Find your perfect rental home
-      </p>
-
-      {error && (
-        <div style={{
-          padding: '12px',
-          marginBottom: '20px',
-          background: '#f8d7da',
-          color: '#721c24',
-          borderRadius: '4px',
-          borderLeft: '4px solid #f5c6cb'
-        }}>
-          ❌ {error}
-        </div>
-      )}
-
-      {authError && (
-        <div style={{
-          padding: '12px',
-          marginBottom: '20px',
-          background: '#f8d7da',
-          color: '#721c24',
-          borderRadius: '4px'
-        }}>
-          ❌ {authError}
-        </div>
-      )}
-
-      <form onSubmit={handleLogin} style={{ marginBottom: '20px' }}>
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your@email.com"
-            className="input"
-            required
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            className="input"
-            required
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="btn btn-primary"
-          style={{ width: '100%', marginBottom: '16px' }}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '12px',
-        marginBottom: '24px'
+        maxWidth: '440px',
+        width: '100%',
+        background: 'white',
+        borderRadius: '16px',
+        padding: '48px 40px',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
       }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <h1 style={{ 
+            fontSize: '2rem', 
+            color: '#0D6EFD', 
+            marginBottom: '8px',
+            fontWeight: '700'
+          }}>
+            🏠 RentSure
+          </h1>
+          <p style={{ color: '#6c757d', fontSize: '0.95rem' }}>
+            Find your perfect rental home
+          </p>
+        </div>
+
+        {error && (
+          <div style={{
+            padding: '14px 16px',
+            marginBottom: '24px',
+            background: '#fee',
+            color: '#c33',
+            borderRadius: '8px',
+            border: '1px solid #fcc',
+            fontSize: '0.9rem'
+          }}>
+            ❌ {error}
+          </div>
+        )}
+
+        {authError && (
+          <div style={{
+            padding: '14px 16px',
+            marginBottom: '24px',
+            background: '#fee',
+            color: '#c33',
+            borderRadius: '8px',
+            border: '1px solid #fcc',
+            fontSize: '0.9rem'
+          }}>
+            ❌ {authError}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: '600',
+              color: '#212529',
+              fontSize: '0.9rem'
+            }}>
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              style={{ 
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                transition: 'border-color 0.2s',
+                outline: 'none'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#0D6EFD'}
+              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+            />
+          </div>
+
+          <div style={{ marginBottom: '28px' }}>
+            <label style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              fontWeight: '600',
+              color: '#212529',
+              fontSize: '0.9rem'
+            }}>
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              style={{ 
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                transition: 'border-color 0.2s',
+                outline: 'none'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#0D6EFD'}
+              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ 
+              width: '100%',
+              padding: '14px',
+              background: loading ? '#9ec5fe' : '#0D6EFD',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: loading ? 'none' : '0 4px 12px rgba(13, 110, 253, 0.3)'
+            }}
+            onMouseOver={(e) => !loading && (e.target.style.background = '#0b5ed7')}
+            onMouseOut={(e) => !loading && (e.target.style.background = '#0D6EFD')}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '12px',
+          marginBottom: '28px'
+        }}>
         <button
           onClick={handleDemoTenant}
           disabled={loading}
-          className="btn"
           style={{
+            padding: '12px',
             background: '#e7f3ff',
             border: '2px solid #0D6EFD',
             color: '#0D6EFD',
-            fontWeight: 600,
-            cursor: 'pointer'
+            fontWeight: '600',
+            borderRadius: '8px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            fontSize: '0.9rem',
+            transition: 'all 0.2s',
+            opacity: loading ? 0.6 : 1
           }}
+          onMouseOver={(e) => !loading && (e.target.style.transform = 'translateY(-2px)')}
+          onMouseOut={(e) => !loading && (e.target.style.transform = 'translateY(0)')}
         >
           👨‍🎓 Tenant Demo
         </button>
         <button
           onClick={handleDemoOwner}
           disabled={loading}
-          className="btn"
           style={{
+            padding: '12px',
             background: '#fff3cd',
             border: '2px solid #ffc107',
             color: '#856404',
-            fontWeight: 600,
-            cursor: 'pointer'
+            fontWeight: '600',
+            borderRadius: '8px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            fontSize: '0.9rem',
+            transition: 'all 0.2s',
+            opacity: loading ? 0.6 : 1
           }}
+          onMouseOver={(e) => !loading && (e.target.style.transform = 'translateY(-2px)')}
+          onMouseOut={(e) => !loading && (e.target.style.transform = 'translateY(0)')}
         >
           🏠 Owner Demo
         </button>
       </div>
 
-      <p style={{ textAlign: 'center', color: '#6c757d', fontSize: '0.9rem' }}>
-        Don't have an account?{' '}
-        <a 
-          href="/signup/tenant" 
-          style={{ color: '#0D6EFD', textDecoration: 'none', fontWeight: 600 }}
-        >
-          Sign up as Tenant
-        </a>
-        {' or '}
-        <a 
-          href="/signup/owner" 
-          style={{ color: '#ffc107', textDecoration: 'none', fontWeight: 600 }}
-        >
-          Sign up as Owner
-        </a>
-      </p>
+      <div style={{ 
+        textAlign: 'center', 
+        paddingTop: '24px',
+        borderTop: '1px solid #e0e0e0'
+      }}>
+        <p style={{ color: '#6c757d', fontSize: '0.9rem', marginBottom: '0' }}>
+          Don't have an account?
+        </p>
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          justifyContent: 'center',
+          marginTop: '12px'
+        }}>
+          <a 
+            href="/signup/tenant" 
+            style={{ 
+              color: '#0D6EFD', 
+              textDecoration: 'none', 
+              fontWeight: '600',
+              fontSize: '0.95rem'
+            }}
+          >
+            Sign up as Tenant
+          </a>
+          <span style={{ color: '#dee2e6' }}>|</span>
+          <a 
+            href="/signup/owner" 
+            style={{ 
+              color: '#ffc107', 
+              textDecoration: 'none', 
+              fontWeight: '600',
+              fontSize: '0.95rem'
+            }}
+          >
+            Sign up as Owner
+          </a>
+        </div>
+      </div>
     </div>
+  </div>
   );
 }
