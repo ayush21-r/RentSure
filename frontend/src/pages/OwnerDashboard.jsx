@@ -479,6 +479,9 @@ export default function OwnerDashboard() {
               <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
                 🖼️ Gallery Photos (Multiple Images)
               </label>
+              <div style={{ fontSize: '0.85rem', color: '#0c5460', marginBottom: '10px', padding: '8px', background: '#d1ecf1', borderRadius: '4px', border: '1px solid #bee5eb' }}>
+                📌 <strong>URL Links Only:</strong> Paste image URLs from Google Drive, Imgur, or any web image link. No file uploads.
+              </div>
               <div style={{ marginBottom: '12px' }}>
                 {galleryPhotos.length === 0 ? (
                   <div style={{ padding: '12px', background: '#f8f9fa', borderRadius: '6px', color: '#6c757d', fontSize: '0.9rem' }}>
@@ -502,7 +505,7 @@ export default function OwnerDashboard() {
                         value={photo.url}
                         onChange={(e) => handleGalleryPhotoChange(photo.id, e.target.value)}
                         className="input"
-                        placeholder="https://example.com/room.jpg"
+                        placeholder="https://drive.google.com/... or https://example.com/room.jpg"
                         style={{ width: '100%' }}
                       />
                       {photo.url && (
@@ -540,7 +543,7 @@ export default function OwnerDashboard() {
                 ➕ Add Photo
               </button>
               <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '8px' }}>
-                💡 Add multiple room photos (bedroom, living room, kitchen, bathroom, etc.)
+                💡 Add multiple room photos using URLs only - bedroom, living room, kitchen, bathroom, etc. (Google Drive or web links)
               </div>
             </div>
 

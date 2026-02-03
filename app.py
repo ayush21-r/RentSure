@@ -163,6 +163,9 @@ def seed_demo_users():
             db.add_all(demo_properties)
             print("✓ Demo owner created: owner@rentsure.demo / Owner@123")
             print("✓ Demo properties created (3)")
+        else:
+            # Ensure demo owner always has the expected demo password
+            owner_demo.password_hash = hash_password("Owner@123")
         
         db.commit()
     except Exception as e:
