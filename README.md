@@ -1,5 +1,10 @@
 # RentSure - Student Rental Platform
 
+## 🌐 Live Website
+### ➡️ **[Visit RentSure Now](https://hacksmithrentsure1.netlify.app/)**
+
+---
+
 ## 📋 Project Overview
 
 **RentSure** is a full-stack web application designed to help students find safe, affordable rental accommodations near colleges and offices. The platform features intelligent rental recommendations, trust scoring for property owners, and safety metrics to ensure students find reliable housing.
