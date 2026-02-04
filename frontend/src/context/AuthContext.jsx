@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+const API_BASE_URL = 'https://rentsure-backend-b90m.onrender.com';
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -8,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load token from localStorage on mount
+  // Load token from localStorage on mount OR auto-login tenant
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -16,9 +18,41 @@ export const AuthProvider = ({ children }) => {
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
+      setLoading(false);
+    } else {
+      // Auto-login as tenant with demo credentials
+      autoLoginTenant();
     }
-    setLoading(false);
   }, []);
+
+  const autoLoginTenant = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/auth/login', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          email: 'tenant@rentsure.demo', 
+          password: 'Tenant@123' 
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setToken(data.access_token);
+        setUser(data.user);
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('✅ Auto-login successful');
+      }
+    } catch (err) {
+      console.log('⚠️ Auto-login skipped (backend not available)');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email, password) => {
     try {
@@ -28,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
-      const response = await fetch('http://localhost:8000/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -73,7 +107,7 @@ export const AuthProvider = ({ children }) => {
   const registerTenant = async (userData) => {
     try {
       setError(null);
-      const response = await fetch('http://localhost:8000/auth/register/tenant', {
+      const response = await fetch(`${API_BASE_URL}/auth/register/tenant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
@@ -101,7 +135,7 @@ export const AuthProvider = ({ children }) => {
   const registerOwner = async (userData) => {
     try {
       setError(null);
-      const response = await fetch('http://localhost:8000/auth/register/owner', {
+      const response = await fetch(`${API_BASE_URL}/auth/register/owner`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
