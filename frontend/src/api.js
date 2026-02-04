@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "https://rentsure-backend-b90m.onrender.com";
 
 // Offline/Error handling wrapper
 export async function fetchWithRetry(url, options = {}, retries = 2) {
