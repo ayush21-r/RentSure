@@ -1,7 +1,7 @@
 """
 Database models for RentSure auth system
 """
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
@@ -72,6 +72,7 @@ class Property(Base):
     owner_id = Column(Integer, ForeignKey("users.id"), index=True)
     title = Column(String, index=True)
     description = Column(String)
+    address = Column(String, nullable=True)
     city = Column(String, index=True)
     rent = Column(Integer)  # in rupees
     availability = Column(Boolean, default=True)
@@ -88,8 +89,21 @@ class Property(Base):
     owner = relationship("User", back_populates="properties")
 
 
+def _ensure_property_address_column():
+    """Add address column for existing databases if missing."""
+    try:
+        with engine.begin() as conn:
+            columns = [row[1] for row in conn.exec_driver_sql("PRAGMA table_info(properties)").fetchall()]
+            if "address" not in columns:
+                conn.exec_driver_sql("ALTER TABLE properties ADD COLUMN address VARCHAR")
+    except Exception:
+        # Avoid hard crash on startup if migration fails
+        pass
+
+
 # Create tables on import
 Base.metadata.create_all(bind=engine)
+_ensure_property_address_column()
 
 
 def get_db():

@@ -63,6 +63,7 @@ class OwnerResponse(UserResponse):
 class PropertyCreateRequest(BaseModel):
     title: str
     description: str
+    address: Optional[str] = None
     city: str
     rent: int
     availability: bool = True
@@ -78,6 +79,7 @@ class PropertyResponse(BaseModel):
     owner_id: int
     title: str
     description: str
+    address: Optional[str]
     city: str
     rent: int
     availability: bool

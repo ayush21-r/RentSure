@@ -2,6 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const cityMeta = {
+  pune: {
+    colleges: ["COEP", "Symbiosis", "MIT-WPU", "Fergusson College", "PICT"],
+    offices: ["Hinjewadi IT Park", "Magarpatta", "Kharadi EON", "Baner Business Bay", "Viman Nagar Hub"],
+  },
+  bengaluru: {
+    colleges: ["Christ University", "St. Joseph's", "PES", "IIM-B", "RVCE"],
+    offices: ["Manyata Tech Park", "Koramangala Startup Hub", "Sarjapur ORR", "HSR Sector 2", "Whitefield ITPL"],
+  },
+  nagpur: {
+    colleges: ["VNIT", "RTMNU", "YCCE", "RCOEM", "LIT", "SB JAIN"],
+    offices: ["MIHAN", "Civil Lines", "Sitabuldi", "Sadar Market", "Dharampeth Hub"],
+  },
+};
+
+const getCollegesForCity = (city) => cityMeta[city]?.colleges || [];
+const getOfficesForCity = (city) => cityMeta[city]?.offices || [];
+
+const getDefaultFormData = (city = 'pune') => ({
+  title: '',
+  description: '',
+  address: '',
+  city,
+  rent: '',
+  availability: true,
+  safety_score: '',
+  nearby_college: '',
+  college_distance_km: '',
+  nearby_office_hub: '',
+  office_distance_km: '',
+  thumbnail_url: '',
+  gallery_photos: []
+});
+
 export default function OwnerDashboard() {
   const { user, token, logout } = useAuth();
   const navigate = useNavigate();
@@ -17,25 +51,26 @@ export default function OwnerDashboard() {
   const [propertyPhotos, setPropertyPhotos] = useState([]);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
   
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    city: 'pune',
-    rent: 10000,
-    availability: true,
-    safety_score: 4.0,
-    nearby_college: '',
-    college_distance_km: 0,
-    nearby_office_hub: '',
-    office_distance_km: 0,
-    thumbnail_url: '',
-    gallery_photos: []
-  });
+  const [formData, setFormData] = useState(() => getDefaultFormData('pune'));
+  const [collegeOptions, setCollegeOptions] = useState(() => getCollegesForCity('pune'));
+  const [officeOptions, setOfficeOptions] = useState(() => getOfficesForCity('pune'));
 
   // Fetch properties on mount
   useEffect(() => {
     fetchProperties();
   }, []);
+
+  useEffect(() => {
+    const colleges = getCollegesForCity(formData.city);
+    const offices = getOfficesForCity(formData.city);
+    setCollegeOptions(colleges);
+    setOfficeOptions(offices);
+    setFormData(prev => ({
+      ...prev,
+      nearby_college: colleges.includes(prev.nearby_college) ? prev.nearby_college : '',
+      nearby_office_hub: offices.includes(prev.nearby_office_hub) ? prev.nearby_office_hub : ''
+    }));
+  }, [formData.city]);
 
   const fetchProperties = async () => {
     try {
@@ -89,20 +124,7 @@ export default function OwnerDashboard() {
       }
 
       setSuccess(editingId ? 'Property updated!' : 'Property created!');
-      setFormData({
-        title: '',
-        description: '',
-        city: 'pune',
-        rent: 10000,
-        availability: true,
-        safety_score: 4.0,
-        nearby_college: '',
-        college_distance_km: 0,
-        nearby_office_hub: '',
-        office_distance_km: 0,
-        thumbnail_url: '',
-        gallery_photos: []
-      });
+      setFormData(getDefaultFormData(formData.city));
       setGalleryPhotos([]);
       setEditingId(null);
       setShowAddForm(false);
@@ -315,6 +337,7 @@ export default function OwnerDashboard() {
                 value={formData.title}
                 onChange={handleChange}
                 className="input"
+                placeholder="e.g., Spacious 1BHK near college"
                 required
                 style={{ width: '100%' }}
               />
@@ -330,8 +353,27 @@ export default function OwnerDashboard() {
                 onChange={handleChange}
                 className="input"
                 rows="4"
+                placeholder="e.g., Well-ventilated, WiFi, water 24x7, safe locality"
                 style={{ width: '100%' }}
               />
+            </div>
+
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
+                Full Address
+              </label>
+              <textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                className="input"
+                rows="2"
+                placeholder="House/Flat No., Street, Area, Landmark"
+                style={{ width: '100%' }}
+              />
+              <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '4px' }}>
+                Example: Flat 204, Shree Towers, Pratap Nagar, near Metro Station
+              </div>
             </div>
 
             <div>
@@ -361,6 +403,7 @@ export default function OwnerDashboard() {
                 value={formData.rent}
                 onChange={handleChange}
                 className="input"
+                placeholder="e.g., 12000"
                 required
                 style={{ width: '100%' }}
               />
@@ -379,6 +422,7 @@ export default function OwnerDashboard() {
                 max="5"
                 step="0.1"
                 className="input"
+                placeholder="1 to 5"
                 style={{ width: '100%' }}
               />
             </div>
@@ -387,15 +431,21 @@ export default function OwnerDashboard() {
               <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
                 Nearby College
               </label>
-              <input
-                type="text"
+              <select
                 name="nearby_college"
                 value={formData.nearby_college}
                 onChange={handleChange}
-                className="input"
-                placeholder="e.g., COEP"
+                className="select"
                 style={{ width: '100%' }}
-              />
+              >
+                <option value="">Select a college</option>
+                {collegeOptions.length === 0 && (
+                  <option value="">No colleges available</option>
+                )}
+                {collegeOptions.map((college) => (
+                  <option key={college} value={college}>{college}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -409,6 +459,7 @@ export default function OwnerDashboard() {
                 onChange={handleChange}
                 step="0.1"
                 className="input"
+                placeholder="e.g., 2.5"
                 style={{ width: '100%' }}
               />
             </div>
@@ -417,15 +468,21 @@ export default function OwnerDashboard() {
               <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600 }}>
                 Nearby Office Hub
               </label>
-              <input
-                type="text"
+              <select
                 name="nearby_office_hub"
                 value={formData.nearby_office_hub}
                 onChange={handleChange}
-                className="input"
-                placeholder="e.g., Hinjewadi IT Park"
+                className="select"
                 style={{ width: '100%' }}
-              />
+              >
+                <option value="">Select an office hub</option>
+                {officeOptions.length === 0 && (
+                  <option value="">No office hubs available</option>
+                )}
+                {officeOptions.map((office) => (
+                  <option key={office} value={office}>{office}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -439,6 +496,7 @@ export default function OwnerDashboard() {
                 onChange={handleChange}
                 step="0.1"
                 className="input"
+                placeholder="e.g., 4.0"
                 style={{ width: '100%' }}
               />
             </div>

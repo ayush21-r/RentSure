@@ -48,7 +48,7 @@ export default function ListingsPage() {
         offices: ["Manyata Tech Park", "Koramangala Startup Hub", "Sarjapur ORR", "HSR Sector 2", "Whitefield ITPL"],
       },
       nagpur: {
-        colleges: ["VNIT", "RTMNU", "YCCE", "RCOEM", "LIT"],
+        colleges: ["VNIT", "RTMNU", "YCCE", "RCOEM", "LIT", "SB JAIN"],
         offices: ["MIHAN", "Civil Lines", "Sitabuldi", "Sadar Market", "Dharampeth Hub"],
       },
     };

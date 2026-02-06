@@ -190,6 +190,7 @@ def get_owner_properties(authorization: Optional[str] = Header(None), db: Sessio
                 "id": p.id,
                 "title": p.title,
                 "description": p.description,
+                "address": p.address,
                 "city": p.city,
                 "rent": p.rent,
                 "availability": p.availability,
@@ -223,6 +224,7 @@ def create_property(
         owner_id=user_id,
         title=req.title,
         description=req.description,
+        address=req.address,
         city=req.city,
         rent=req.rent,
         availability=req.availability,
@@ -280,6 +282,7 @@ def update_property(
     # Update fields
     property.title = req.title
     property.description = req.description
+    property.address = req.address
     property.city = req.city
     property.rent = req.rent
     property.availability = req.availability
