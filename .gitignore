@@ -1,3 +1,8 @@
 # Ignore local dependencies
 frontend/node_modules
 node_modules
+
+# Ignore Python cache and local DB
+__pycache__/
+*.pyc
+rentsure.db
